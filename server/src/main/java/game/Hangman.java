@@ -3,83 +3,72 @@ package game;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Stream;
+import java.util.ArrayList;
 
 @Getter
 @Setter
-public class Hangman {
+public class Hangman implements Runnable{
 
-    @NonNull
-    private String wordlistFilename;
-    @NonNull
-    private String highscoreFilename;
-
-    private static File wordlistFile, highscoreFile;
-    private List<String> words;
-
-    private static final int MAX_ATTEMPTS = 7;
-    private int currentAttempt = 1;
+    private int attempts = 7;
 
     private final String choosenWord;
-    private String maskedWord;
 
-    private final char[] guessedCharacters;
+    private final ArrayList guessedCharacters;
 
 
-    public Hangman(@NonNull String wordlistFilename, @NonNull String highscoreFilename) throws IOException {
-        this.wordlistFilename = wordlistFilename;
-        this.wordlistFilename = highscoreFilename;
-        this.words = new LinkedList<>();
-        this.setupData();
-        this.choosenWord = pickRandomWord();
-        this.guessedCharacters = new char[MAX_ATTEMPTS];
+    public Hangman(@NonNull String word) {
+        this.choosenWord = word;
+        this.guessedCharacters = new ArrayList();
     }
 
-    private void setupData() throws IOException {
-        if (wordlistFile == null){
-            wordlistFile = FileUtils.getFile(this.wordlistFilename);
-        }
-        if (highscoreFile == null){
-            highscoreFile = FileUtils.getFile(this.highscoreFilename);
-        }
-        readWordlist();
-    }
 
-    synchronized private void readWordlist() throws IOException {
-        this.words = FileUtils.readLines(wordlistFile, "UTF-8");
-    }
-
-    private String pickRandomWord(){
-        return this.words.get(getRandomWordListIndex());
-    }
-
-    private int getRandomWordListIndex(){
-        Random rand = new Random();
-        return rand.nextInt(this.words.size());
-    }
-
-    private void buildMaskWord(){
-        this.maskedWord = "";
-        this.choosenWord.chars().forEach(this::matchCharacter);
-    }
-
-    private void matchCharacter(int characterValue){
-        for(char guessedCharacter : this.guessedCharacters){
-            if (guessedCharacter == characterValue){
-                this.maskedWord += Integer.toString(characterValue);
-                break;
-            }
-            else {
-                this.maskedWord += "_";
-                break;
+    private String buildMessage() {
+        String s = "";
+        for(int i = 0; i < this.choosenWord.length(); i++){
+            char currentChar =  this.choosenWord.charAt(i);
+            if (this.guessedCharacters.contains(currentChar)) {
+                s += currentChar;
+            } else {
+                s += "_";
             }
         }
+
+        return "Word: " + s + " Attempts left: " + this.attempts;
+    }
+
+    public String guess(String input) {
+        if (input.length() > 1) {
+            if (this.choosenWord.toLowerCase().equals(input.toLowerCase())) {
+                attempts = 0;
+                return "Correct! The word was: " + this.choosenWord;
+            } else {
+                attempts--;
+                return "The word was not correct.";
+            }
+        } else if ( input.length() == 1) {
+            if (this.guessedCharacters.contains(input.charAt(0))) {
+                return "The character has been guessed already";
+            } else {
+                this.guessedCharacters.add(input.charAt(0));
+                attempts--;
+                return buildMessage();
+            }
+        } else {
+            return "Input is empty.";
+        }
+    }
+
+    public String playRound(String input) {
+        if (this.attempts > 0) {
+            return guess(input);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void run() {
+
     }
 }

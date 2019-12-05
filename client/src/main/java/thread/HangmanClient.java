@@ -94,7 +94,6 @@ public class HangmanClient extends Thread {
      */
     private void shutdown(){
         if (this.running) {
-            this.out.println("!DISCONNECT");
             this.running = false;
         }
         try {
@@ -103,6 +102,10 @@ public class HangmanClient extends Thread {
         catch (IOException ex){
             System.err.println("Failed to close Network Socket: " + ex.getMessage());
         }
+    }
+
+    public boolean isRunning(){
+        return this.running;
     }
 
 }
